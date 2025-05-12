@@ -1,0 +1,39 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+
+np.random.seed(42)
+
+n_points = 1000
+x_coords = np.random.uniform(0, 1000, n_points)
+y_coords = np.random.uniform(0, 1000, n_points)
+
+elevation = 500 + 50 * np.sin(0.005 * x_coords) + np.random.normal(0, 10, n_points)
+slope = np.abs(np.gradient(elevation)) + np.random.normal(0, 2, n_points)
+aspect = (np.arctan2(np.gradient(elevation), np.gradient(x_coords)) * 180 / np.pi) % 360
+
+features = np.stack((x_coords, y_coords, elevation, slope, aspect), axis=1)
+
+scaler = StandardScaler()
+features_scaled = scaler.fit_transform(features)
+
+db = DBSCAN(eps=0.8, min_samples=10)
+clusters = db.fit_predict(features_scaled)
+
+plt.figure(figsize=(10, 8))
+palette = sns.color_palette("hsv", len(set(clusters)))
+for cluster_id in np.unique(clusters):
+    idx = clusters == cluster_id
+    plt.scatter(x_coords[idx], y_coords[idx], s=10,
+                label=f'Cluster {cluster_id}' if cluster_id != -1 else 'Noise',
+                color=palette[cluster_id % len(palette)])
+
+plt.title("Synthetic Fault Zone Clustering with DBSCAN")
+plt.xlabel("X Coordinate (m)")
+plt.ylabel("Y Coordinate (m)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
